@@ -57,7 +57,7 @@ $(WEBP_SSE2_DEC_SOURCES:.c=.o): CFLAGS += -msse2
 $(WEBP_SSE41_DEC_SOURCES:.c=.o): CFLAGS += -msse4.1
 
 BINARY ?= ifwebp.spi
-ARCHIVE ?= ifwebp.$(GIT_HASH).7z
+ARCHIVE ?= ifwebp.$(GIT_TAG).7z
 
 all: $(BINARY)
 
