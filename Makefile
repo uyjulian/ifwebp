@@ -47,7 +47,7 @@ WEBP_SSE2_DEC_SOURCES += external/libwebp/src/dsp/alpha_processing_sse2.c extern
 WEBP_SSE2_ENC_SOURCES += external/libwebp/src/dsp/cost_sse2.c external/libwebp/src/dsp/enc_sse2.c external/libwebp/src/dsp/lossless_enc_sse2.c external/libwebp/src/dsp/ssim_sse2.c
 WEBP_SSE41_DEC_SOURCES += external/libwebp/src/dsp/alpha_processing_sse41.c external/libwebp/src/dsp/dec_sse41.c external/libwebp/src/dsp/upsampling_sse41.c external/libwebp/src/dsp/yuv_sse41.c
 WEBP_SSE41_ENC_SOURCES += external/libwebp/src/dsp/enc_sse41.c external/libwebp/src/dsp/lossless_enc_sse41.c
-SOURCES := extractor.c spi00in.c $(WEBP_DEC_SOURCES) $(WEBP_SSE2_DEC_SOURCES) $(WEBP_SSE41_DEC_SOURCES)
+SOURCES := extractor.c spi00in.c ifwebp.rc $(WEBP_DEC_SOURCES) $(WEBP_SSE2_DEC_SOURCES) $(WEBP_SSE41_DEC_SOURCES)
 OBJECTS := $(SOURCES:.c=.o)
 OBJECTS := $(OBJECTS:.cpp=.o)
 OBJECTS := $(OBJECTS:.asm=.o)
