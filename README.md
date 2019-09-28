@@ -1,6 +1,6 @@
 # WebP Susie plugin
 
-This plugin allows reading and writing of WebP images in Susie plugin-compatible image viewers.
+This plugin allows reading of WebP images in Susie plugin-compatible image viewers.
 
 ## Building
 
