@@ -1,21 +1,21 @@
 #############################################
 ##                                         ##
-##    Copyright (C) 2019-2019 Julian Uy    ##
+##    Copyright (C) 2019-2021 Julian Uy    ##
 ##  https://sites.google.com/site/awertyb  ##
 ##                                         ##
 ##   See details of license at "LICENSE"   ##
 ##                                         ##
 #############################################
 
-CC = i686-w64-mingw32-gcc
-CXX = i686-w64-mingw32-g++
-AR = i686-w64-mingw32-ar
-ASM = nasm
-WINDRES = i686-w64-mingw32-windres
+TOOL_TRIPLET_PREFIX ?= i686-w64-mingw32-
+CC := $(TOOL_TRIPLET_PREFIX)gcc
+CXX := $(TOOL_TRIPLET_PREFIX)g++
+AR := $(TOOL_TRIPLET_PREFIX)ar
+WINDRES := $(TOOL_TRIPLET_PREFIX)windres
+STRIP := $(TOOL_TRIPLET_PREFIX)strip
 GIT_TAG := $(shell git describe --abbrev=0 --tags)
 INCFLAGS += -I. -I.. -Iexternal/libwebp -Iexternal/libwebp/src
 ALLSRCFLAGS += $(INCFLAGS) -DGIT_TAG=\"$(GIT_TAG)\"
-ASMFLAGS += $(ALLSRCFLAGS) -fwin32 -DWIN32
 CFLAGS += -O3 -flto
 CFLAGS += $(ALLSRCFLAGS) -Wall -Wno-unused-value -Wno-format -DNDEBUG -DWIN32 -D_WIN32 -D_WINDOWS 
 CFLAGS += -D_USRDLL -DUNICODE -D_UNICODE 
@@ -33,10 +33,6 @@ LDLIBS +=
 	@printf '\t%s %s\n' CXX $<
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-%.o: %.asm
-	@printf '\t%s %s\n' ASM $<
-	$(ASM) $(ASMFLAGS) $< -o$@ 
-
 %.o: %.rc
 	@printf '\t%s %s\n' WINDRES $<
 	$(WINDRES) $(WINDRESFLAGS) $< $@
@@ -50,26 +46,30 @@ WEBP_SSE41_ENC_SOURCES += external/libwebp/src/dsp/enc_sse41.c external/libwebp/
 SOURCES := extractor.c spi00in.c ifwebp.rc $(WEBP_DEC_SOURCES) $(WEBP_SSE2_DEC_SOURCES) $(WEBP_SSE41_DEC_SOURCES)
 OBJECTS := $(SOURCES:.c=.o)
 OBJECTS := $(OBJECTS:.cpp=.o)
-OBJECTS := $(OBJECTS:.asm=.o)
 OBJECTS := $(OBJECTS:.rc=.o)
 
 $(WEBP_SSE2_DEC_SOURCES:.c=.o): CFLAGS += -msse2
 $(WEBP_SSE41_DEC_SOURCES:.c=.o): CFLAGS += -msse4.1
 
-BINARY ?= ifwebp.spi
+BINARY ?= ifwebp_unstripped.spi
+BINARY_STRIPPED ?= ifwebp.spi
 ARCHIVE ?= ifwebp.$(GIT_TAG).7z
 
-all: $(BINARY)
+all: $(BINARY_STRIPPED)
 
 archive: $(ARCHIVE)
 
 clean:
-	rm -f $(OBJECTS) $(BINARY) $(ARCHIVE)
+	rm -f $(OBJECTS) $(BINARY) $(BINARY_STRIPPED) $(ARCHIVE)
 
-$(ARCHIVE): $(BINARY) 
+$(ARCHIVE): $(BINARY_STRIPPED)
 	rm -f $(ARCHIVE)
 	7z a $@ $^
 
+$(BINARY_STRIPPED): $(BINARY)
+	@printf '\t%s %s\n' STRIP $@
+	$(STRIP) -o $@ $^
+
 $(BINARY): $(OBJECTS) 
 	@printf '\t%s %s\n' LNK $@
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
