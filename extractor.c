@@ -21,7 +21,7 @@ const char *plugin_info[4] = {
 
 const int header_size = 64;
 
-int getBMPFromWebP(uint8_t *input_data, long file_size,
+int getBMPFromWebP(const uint8_t *input_data, size_t file_size,
                    BITMAPFILEHEADER *bitmap_file_header,
                    BITMAPINFOHEADER *bitmap_info_header, uint8_t **data) {
 	int width, height;
@@ -66,7 +66,7 @@ int getBMPFromWebP(uint8_t *input_data, long file_size,
 	return 0;
 }
 
-BOOL IsSupportedEx(char *filename, char *data) {
+BOOL IsSupportedEx(const char *data) {
 	const char header[] = {'R', 'I', 'F', 'F', 0x00, 0x00, 0x00, 0x00,
 	                 'W', 'E', 'B', 'P', 'V',  'P',  '8'};
 	for (int i = 0; i < sizeof(header); i++) {
@@ -78,10 +78,10 @@ BOOL IsSupportedEx(char *filename, char *data) {
 	return TRUE;
 }
 
-int GetPictureInfoEx(long data_size, char *data,
-                     struct PictureInfo *picture_info) {
+int GetPictureInfoEx(size_t data_size, const char *data,
+                     SusiePictureInfo *picture_info) {
 	int width, height;
-	WebPGetInfo((uint8_t *)data, data_size, &width, &height);
+	WebPGetInfo((const uint8_t *)data, data_size, &width, &height);
 
 	picture_info->left = 0;
 	picture_info->top = 0;
@@ -95,8 +95,8 @@ int GetPictureInfoEx(long data_size, char *data,
 	return SPI_ALL_RIGHT;
 }
 
-int GetPictureEx(long data_size, HANDLE *bitmap_info, HANDLE *bitmap_data,
-                 SPI_PROGRESS progress_callback, long user_data, char *data) {
+int GetPictureEx(size_t data_size, HANDLE *bitmap_info, HANDLE *bitmap_data,
+                 SPI_PROGRESS progress_callback, intptr_t user_data, const char *data) {
 	uint8_t *data_u8;
 	BITMAPINFOHEADER bitmap_info_header;
 	BITMAPFILEHEADER bitmap_file_header;
@@ -107,7 +107,7 @@ int GetPictureEx(long data_size, HANDLE *bitmap_info, HANDLE *bitmap_data,
 		if (progress_callback(1, 1, user_data))
 			return SPI_ABORT;
 
-	getBMPFromWebP((uint8_t *)data, data_size, &bitmap_file_header,
+	getBMPFromWebP((const uint8_t *)data, data_size, &bitmap_file_header,
 	               &bitmap_info_header, &data_u8);
 	*bitmap_info = LocalAlloc(LMEM_MOVEABLE, sizeof(BITMAPINFOHEADER));
 	*bitmap_data = LocalAlloc(LMEM_MOVEABLE, bitmap_file_header.bfSize -
