@@ -53,7 +53,7 @@ $(WEBP_SSE41_DEC_SOURCES:.c=.o): CFLAGS += -msse4.1
 
 BINARY ?= ifwebp_unstripped.spi
 BINARY_STRIPPED ?= ifwebp.spi
-ARCHIVE ?= ifwebp.$(GIT_TAG).7z
+ARCHIVE ?= ifwebp.7z
 
 all: $(BINARY_STRIPPED)
 

@@ -2,6 +2,11 @@
 
 This plugin allows reading of WebP images in Susie plugin-compatible image viewers.
 
+## Downloads
+
+The following binaries are available:  
+* [Win32 (Intel 32-bit)](https://github.com/uyjulian/ifwebp/releases/latest/download/ifwebp.7z)  
+
 ## Building
 
 After cloning submodules, a simple `make` will generate `ifwebp.spi`.
