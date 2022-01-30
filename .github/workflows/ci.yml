@@ -44,7 +44,7 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: ifwebp-win32
-          path: ifwebp.*.7z
+          path: ifwebp.7z
 
   create-release:
     needs: [build-win32]
