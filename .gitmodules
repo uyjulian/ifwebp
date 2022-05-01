@@ -1,3 +1,4 @@
 [submodule "external/libwebp"]
 	path = external/libwebp
 	url = https://chromium.googlesource.com/webm/libwebp
+	ignore = dirty
