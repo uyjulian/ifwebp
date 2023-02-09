@@ -42,9 +42,8 @@ OBJECT_EXTENSION ?= .o
 endif
 OBJECT_EXTENSION ?= .$(TARGET_ARCH).o
 DEP_EXTENSION ?= .dep.make
-BUILD_DIR_EXTERNAL_NAME ?= build-$(TARGET_ARCH)
 export GIT_TAG := $(shell git describe --abbrev=0 --tags)
-INCFLAGS += -I. -I.. -Iexternal/libwebp -Iexternal/libwebp/src
+INCFLAGS += -I. -I..
 ALLSRCFLAGS += $(INCFLAGS) -DGIT_TAG=\"$(GIT_TAG)\"
 OPTFLAGS := -O3
 ifeq (x$(TARGET_ARCH),xintel32)
@@ -79,6 +78,12 @@ LDFLAGS += $(OPTFLAGS) -static -static-libgcc -Wl,--kill-at -fPIC
 LDFLAGS_LIB += -shared
 LDLIBS +=
 
+DEPENDENCY_SOURCE_DIRECTORY := $(abspath build-source)
+DEPENDENCY_BUILD_DIRECTORY := $(abspath build-$(TARGET_ARCH))
+DEPENDENCY_OUTPUT_DIRECTORY := $(abspath build-libraries)-$(TARGET_ARCH)
+
+INCFLAGS += -I$(DEPENDENCY_OUTPUT_DIRECTORY)/include
+
 %$(OBJECT_EXTENSION): %.c
 	@printf '\t%s %s\n' CC $<
 	$(CC) -c $(CFLAGS) $(OPTFLAGS) -o $@ $<
@@ -111,26 +116,13 @@ ARCHIVE ?= $(PROJECT_BASENAME).$(TARGET_ARCH).$(GIT_TAG).7z
 endif
 ARCHIVE ?= $(PROJECT_BASENAME).$(TARGET_ARCH).7z
 
-WEBP_SOURCES += external/libwebp/sharpyuv/sharpyuv.c external/libwebp/sharpyuv/sharpyuv_csp.c external/libwebp/sharpyuv/sharpyuv_dsp.c external/libwebp/sharpyuv/sharpyuv_gamma.c external/libwebp/src/dec/alpha_dec.c external/libwebp/src/dec/buffer_dec.c external/libwebp/src/dec/frame_dec.c external/libwebp/src/dec/idec_dec.c external/libwebp/src/dec/io_dec.c external/libwebp/src/dec/quant_dec.c external/libwebp/src/dec/tree_dec.c external/libwebp/src/dec/vp8_dec.c external/libwebp/src/dec/vp8l_dec.c external/libwebp/src/dec/webp_dec.c external/libwebp/src/dsp/alpha_processing.c external/libwebp/src/dsp/cpu.c external/libwebp/src/dsp/dec.c external/libwebp/src/dsp/dec_clip_tables.c external/libwebp/src/dsp/filters.c external/libwebp/src/dsp/lossless.c external/libwebp/src/dsp/rescaler.c external/libwebp/src/dsp/upsampling.c external/libwebp/src/dsp/yuv.c external/libwebp/src/dsp/cost.c external/libwebp/src/dsp/enc.c external/libwebp/src/dsp/lossless_enc.c external/libwebp/src/dsp/ssim.c external/libwebp/src/enc/alpha_enc.c external/libwebp/src/enc/analysis_enc.c external/libwebp/src/enc/backward_references_cost_enc.c external/libwebp/src/enc/backward_references_enc.c external/libwebp/src/enc/config_enc.c external/libwebp/src/enc/cost_enc.c external/libwebp/src/enc/filter_enc.c external/libwebp/src/enc/frame_enc.c external/libwebp/src/enc/histogram_enc.c external/libwebp/src/enc/iterator_enc.c external/libwebp/src/enc/near_lossless_enc.c external/libwebp/src/enc/picture_enc.c external/libwebp/src/enc/picture_csp_enc.c external/libwebp/src/enc/picture_psnr_enc.c external/libwebp/src/enc/picture_rescale_enc.c external/libwebp/src/enc/picture_tools_enc.c external/libwebp/src/enc/predictor_enc.c external/libwebp/src/enc/quant_enc.c external/libwebp/src/enc/syntax_enc.c external/libwebp/src/enc/token_enc.c external/libwebp/src/enc/tree_enc.c external/libwebp/src/enc/vp8l_enc.c external/libwebp/src/enc/webp_enc.c external/libwebp/src/demux/anim_decode.c external/libwebp/src/demux/demux.c external/libwebp/src/mux/anim_encode.c external/libwebp/src/mux/muxedit.c external/libwebp/src/mux/muxinternal.c external/libwebp/src/mux/muxread.c external/libwebp/src/utils/bit_reader_utils.c external/libwebp/src/utils/color_cache_utils.c external/libwebp/src/utils/filters_utils.c external/libwebp/src/utils/huffman_utils.c external/libwebp/src/utils/quant_levels_dec_utils.c external/libwebp/src/utils/rescaler_utils.c external/libwebp/src/utils/random_utils.c external/libwebp/src/utils/thread_utils.c external/libwebp/src/utils/utils.c external/libwebp/src/utils/bit_writer_utils.c external/libwebp/src/utils/huffman_encode_utils.c external/libwebp/src/utils/quant_levels_utils.c
-WEBP_SSE2_SOURCES += external/libwebp/sharpyuv/sharpyuv_sse2.c external/libwebp/src/dsp/alpha_processing_sse2.c external/libwebp/src/dsp/dec_sse2.c external/libwebp/src/dsp/filters_sse2.c external/libwebp/src/dsp/lossless_sse2.c external/libwebp/src/dsp/rescaler_sse2.c external/libwebp/src/dsp/upsampling_sse2.c external/libwebp/src/dsp/yuv_sse2.c external/libwebp/src/dsp/cost_sse2.c external/libwebp/src/dsp/enc_sse2.c external/libwebp/src/dsp/lossless_enc_sse2.c external/libwebp/src/dsp/ssim_sse2.c
-WEBP_SSE41_SOURCES += external/libwebp/src/dsp/alpha_processing_sse41.c external/libwebp/src/dsp/dec_sse41.c external/libwebp/src/dsp/lossless_sse41.c external/libwebp/src/dsp/upsampling_sse41.c external/libwebp/src/dsp/yuv_sse41.c external/libwebp/src/dsp/enc_sse41.c external/libwebp/src/dsp/lossless_enc_sse41.c
-WEBP_NEON_SOURCES += external/libwebp/sharpyuv/sharpyuv_neon.c external/libwebp/src/dsp/alpha_processing_neon.c external/libwebp/src/dsp/cost_neon.c external/libwebp/src/dsp/dec_neon.c external/libwebp/src/dsp/enc_neon.c external/libwebp/src/dsp/filters_neon.c external/libwebp/src/dsp/lossless_enc_neon.c external/libwebp/src/dsp/lossless_neon.c external/libwebp/src/dsp/rescaler_neon.c external/libwebp/src/dsp/upsampling_neon.c external/libwebp/src/dsp/yuv_neon.c
-SOURCES := extractor.c spi00in.c ifwebp.rc $(WEBP_SOURCES)
-ifneq (x,x$(findstring intel,$(TARGET_ARCH)))
-SOURCES += $(WEBP_SSE2_SOURCES)
-SOURCES += $(WEBP_SSE41_SOURCES)
-endif
-ifneq (x,x$(findstring arm,$(TARGET_ARCH)))
-SOURCES += $(WEBP_NEON_SOURCES)
-endif
+LIBWEBP_LIBS += $(DEPENDENCY_OUTPUT_DIRECTORY)/lib/libwebp.a $(DEPENDENCY_OUTPUT_DIRECTORY)/lib/libwebpdemux.a
+SOURCES := extractor.c spi00in.c ifwebp.rc
 OBJECTS := $(SOURCES:.c=$(OBJECT_EXTENSION))
 OBJECTS := $(OBJECTS:.cpp=$(OBJECT_EXTENSION))
 OBJECTS := $(OBJECTS:.rc=$(OBJECT_EXTENSION))
 DEPENDENCIES := $(OBJECTS:%$(OBJECT_EXTENSION)=%$(DEP_EXTENSION))
-EXTERNAL_LIBS :=
-
-$(WEBP_SSE2_SOURCES:.c=$(OBJECT_EXTENSION)): CFLAGS += -msse2
-$(WEBP_SSE41_SOURCES:.c=$(OBJECT_EXTENSION)): CFLAGS += -msse4.1
+EXTERNAL_LIBS := $(LIBWEBP_LIBS)
 
 .PHONY:: all archive clean
 
@@ -140,6 +132,13 @@ archive: $(ARCHIVE)
 
 clean::
 	rm -f $(OBJECTS) $(OBJECTS_BIN) $(BINARY) $(BINARY_STRIPPED) $(ARCHIVE) $(DEPENDENCIES)
+	rm -rf $(DEPENDENCY_SOURCE_DIRECTORY) $(DEPENDENCY_BUILD_DIRECTORY) $(DEPENDENCY_OUTPUT_DIRECTORY)
+
+$(DEPENDENCY_SOURCE_DIRECTORY):
+	mkdir -p $@
+
+$(DEPENDENCY_OUTPUT_DIRECTORY):
+	mkdir -p $@
 
 $(ARCHIVE): $(BINARY_STRIPPED) $(EXTRA_DIST)
 	@printf '\t%s %s\n' 7Z $@
@@ -155,3 +154,38 @@ $(BINARY): $(OBJECTS) $(EXTERNAL_LIBS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_LIB) -o $@ $^ $(LDLIBS)
 
 -include $(DEPENDENCIES)
+
+extractor$(OBJECT_EXTENSION): $(DEPENDENCY_OUTPUT_DIRECTORY)/lib/libwebp.a $(DEPENDENCY_OUTPUT_DIRECTORY)/lib/libwebpdemux.a
+
+DEPENDENCY_SOURCE_DIRECTORY_LIBWEBP := $(DEPENDENCY_SOURCE_DIRECTORY)/libwebp
+
+DEPENDENCY_SOURCE_FILE_LIBWEBP := $(DEPENDENCY_SOURCE_DIRECTORY)/libwebp.tar.xz
+
+DEPENDENCY_SOURCE_URL_LIBWEBP := https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.3.0.tar.gz
+
+$(DEPENDENCY_SOURCE_FILE_LIBWEBP): | $(DEPENDENCY_SOURCE_DIRECTORY)
+	curl --location --output $@ $(DEPENDENCY_SOURCE_URL_LIBWEBP)
+
+$(DEPENDENCY_SOURCE_DIRECTORY_LIBWEBP): $(DEPENDENCY_SOURCE_FILE_LIBWEBP)
+	mkdir -p $@
+	tar -x -f $< -C $@ --strip-components 1
+
+DEPENDENCY_BUILD_DIRECTORY_LIBWEBP := $(DEPENDENCY_BUILD_DIRECTORY)/libwebp
+
+$(DEPENDENCY_OUTPUT_DIRECTORY)/lib/libwebpdemux.a: $(DEPENDENCY_OUTPUT_DIRECTORY)/lib/libwebp.a
+
+$(DEPENDENCY_OUTPUT_DIRECTORY)/lib/libwebp.a: | $(DEPENDENCY_SOURCE_DIRECTORY_LIBWEBP) $(DEPENDENCY_OUTPUT_DIRECTORY)
+	mkdir -p $(DEPENDENCY_BUILD_DIRECTORY_LIBWEBP) && \
+	cd $(DEPENDENCY_BUILD_DIRECTORY_LIBWEBP) && \
+	PKG_CONFIG_PATH=$(DEPENDENCY_OUTPUT_DIRECTORY)/lib/pkgconfig \
+	CPPFLAGS="-I$(DEPENDENCY_OUTPUT_DIRECTORY)/include" \
+	LDFLAGS="-L$(DEPENDENCY_OUTPUT_DIRECTORY)/lib" \
+	$(DEPENDENCY_SOURCE_DIRECTORY_LIBWEBP)/configure \
+		CFLAGS="-O2" \
+		--prefix="$(DEPENDENCY_OUTPUT_DIRECTORY)" \
+		--host=$(patsubst %-,%,$(TOOL_TRIPLET_PREFIX)) \
+		--enable-static \
+		--disable-shared \
+	&& \
+	$(MAKE) && \
+	$(MAKE) install
