@@ -22,60 +22,108 @@ const char *plugin_info[4] = {
 const int header_size = 64;
 
 int getBMPFromWebP(const uint8_t *input_data, size_t file_size,
-                   BITMAPFILEHEADER *bitmap_file_header,
-                   BITMAPINFOHEADER *bitmap_info_header, uint8_t **data) {
-	int width, height;
-	unsigned long bit_length, bit_width;
-	uint8_t *bitmap_data;
-	*data = WebPDecodeBGRA(input_data, file_size, &width, &height);
-	bit_width = width * 4;
-	bit_length = bit_width;
+				   HANDLE* h_bitmap_info,
+				   HANDLE* h_bitmap_data) {
+	BITMAPINFOHEADER* bitmap_info_header = NULL;
+	uint8_t *bitmap_data = NULL;
 
-	bitmap_data = (uint8_t *)malloc(sizeof(uint8_t) * bit_length * height);
-	memset(bitmap_data, 0, bit_length * height);
-	for (int i = 0; i < height; i++) {
-		memcpy(bitmap_data + i * bit_length,
-		       *data + (height - i - 1) * bit_width, bit_width);
+	int ret_result = -1;
+
+	int width = 0;
+	int height = 0;
+	int bit_width = 0, bit_length = 0;
+    size_t bitmap_size = 0;
+	WebPDecoderConfig config;
+
+	if (WebPInitDecoderConfig(&config) == FALSE) {
+		goto cleanup;
+	}
+	if (WebPGetFeatures(input_data, file_size, &config.input) != VP8_STATUS_OK){
+		goto cleanup;
 	}
 
-	free(*data);
-	*data = bitmap_data;
-	memset(bitmap_file_header, 0, sizeof(BITMAPFILEHEADER));
-	memset(bitmap_info_header, 0, sizeof(BITMAPINFOHEADER));
+	width = config.input.width;
+	height = config.input.height;
+	bit_width = width * 4;
+	bit_length = bit_width;
+    bitmap_size = (size_t)bit_length * height;
 
-	bitmap_file_header->bfType = 'M' * 256 + 'B';
-	bitmap_file_header->bfSize = sizeof(BITMAPFILEHEADER) +
-	                             sizeof(BITMAPINFOHEADER) +
-	                             sizeof(uint8_t) * bit_length * height;
-	bitmap_file_header->bfOffBits =
-	    sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-	bitmap_file_header->bfReserved1 = 0;
-	bitmap_file_header->bfReserved2 = 0;
+	*h_bitmap_data = LocalAlloc(LMEM_MOVEABLE, bitmap_size);
+	if (!*h_bitmap_data)
+	{
+		goto cleanup;
+	}
+	bitmap_data = (uint8_t*)LocalLock(*h_bitmap_data);
+	if (!bitmap_data)
+	{
+		LocalFree(*h_bitmap_data);
+		*h_bitmap_data = NULL;
+		goto cleanup;
+	}
 
-	bitmap_info_header->biSize = 40;
+	config.options.flip = 1;
+	config.options.use_threads = 1;
+	config.output.colorspace = MODE_BGRA;
+	config.output.u.RGBA.rgba = bitmap_data;
+	config.output.u.RGBA.stride = bit_length;
+	config.output.u.RGBA.size = bitmap_size;
+	config.output.is_external_memory = 1;
+
+	if (WebPDecode(input_data, file_size, &config) != VP8_STATUS_OK) {
+		goto cleanup;
+	}
+
+	*h_bitmap_info = LocalAlloc(LMEM_MOVEABLE | LMEM_ZEROINIT, sizeof(BITMAPINFOHEADER));
+	if (NULL == *h_bitmap_info)
+	{
+		goto cleanup;
+	}
+	bitmap_info_header = (BITMAPINFOHEADER*)LocalLock(*h_bitmap_info);
+	if (NULL == bitmap_info_header)
+	{
+		LocalFree(*h_bitmap_info);
+		*h_bitmap_info = NULL;
+		goto cleanup;
+	}
+
+	bitmap_info_header->biSize = sizeof(BITMAPINFOHEADER);
 	bitmap_info_header->biWidth = width;
 	bitmap_info_header->biHeight = height;
 	bitmap_info_header->biPlanes = 1;
 	bitmap_info_header->biBitCount = 32;
-	bitmap_info_header->biCompression = 0;
-	bitmap_info_header->biSizeImage = bitmap_file_header->bfSize;
-	bitmap_info_header->biXPelsPerMeter = bitmap_info_header->biYPelsPerMeter =
-	    0;
-	bitmap_info_header->biClrUsed = 0;
-	bitmap_info_header->biClrImportant = 0;
-	return 0;
+	bitmap_info_header->biCompression = BI_RGB;
+	bitmap_info_header->biSizeImage = bitmap_size;
+
+	LocalUnlock(*h_bitmap_data);
+	LocalUnlock(*h_bitmap_info);
+
+	ret_result = 0;
+
+cleanup:
+	if (ret_result && bitmap_data)
+	{
+		LocalUnlock(*h_bitmap_data);
+		LocalFree(*h_bitmap_data);
+		*h_bitmap_data = NULL;
+	}
+	if (ret_result && bitmap_info_header)
+	{
+		LocalUnlock(*h_bitmap_info);
+		LocalFree(*h_bitmap_info);
+		*h_bitmap_info = NULL;
+	}
+	WebPFreeDecBuffer(&config.output);
+
+	return ret_result;
 }
 
 BOOL IsSupportedEx(const char *data) {
-	const char header[] = {'R', 'I', 'F', 'F', 0x00, 0x00, 0x00, 0x00,
-	                 'W', 'E', 'B', 'P', 'V',  'P',  '8'};
-	for (int i = 0; i < sizeof(header); i++) {
-		if (header[i] == 0x00)
-			continue;
-		if (data[i] != header[i])
-			return FALSE;
+	if(strncmp(data, "RIFF", 4) == 0 && strncmp(data + 8, "WEBP", 4) == 0)
+	{
+		return TRUE;
 	}
-	return TRUE;
+
+	return FALSE;
 }
 
 int GetPictureInfoEx(size_t data_size, const char *data,
@@ -97,52 +145,12 @@ int GetPictureInfoEx(size_t data_size, const char *data,
 
 int GetPictureEx(size_t data_size, HANDLE *bitmap_info, HANDLE *bitmap_data,
                  SPI_PROGRESS progress_callback, intptr_t user_data, const char *data) {
-	uint8_t *data_u8;
-	BITMAPINFOHEADER bitmap_info_header;
-	BITMAPFILEHEADER bitmap_file_header;
-	BITMAPINFO *bitmap_info_locked;
-	unsigned char *bitmap_data_locked;
-
 	if (progress_callback != NULL)
 		if (progress_callback(1, 1, user_data))
 			return SPI_ABORT;
 
-	getBMPFromWebP((const uint8_t *)data, data_size, &bitmap_file_header,
-	               &bitmap_info_header, &data_u8);
-	*bitmap_info = LocalAlloc(LMEM_MOVEABLE, sizeof(BITMAPINFOHEADER));
-	*bitmap_data = LocalAlloc(LMEM_MOVEABLE, bitmap_file_header.bfSize -
-	                                             bitmap_file_header.bfOffBits);
-	if (*bitmap_info == NULL || *bitmap_data == NULL) {
-		if (*bitmap_info != NULL)
-			LocalFree(*bitmap_info);
-		if (*bitmap_data != NULL)
-			LocalFree(*bitmap_data);
-		return SPI_NO_MEMORY;
-	}
-	bitmap_info_locked = (BITMAPINFO *)LocalLock(*bitmap_info);
-	bitmap_data_locked = (unsigned char *)LocalLock(*bitmap_data);
-	if (bitmap_info_locked == NULL || bitmap_data_locked == NULL) {
-		LocalFree(*bitmap_info);
-		LocalFree(*bitmap_data);
+	if (getBMPFromWebP((const uint8_t*)data, data_size, bitmap_info, bitmap_data))
 		return SPI_MEMORY_ERROR;
-	}
-	bitmap_info_locked->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bitmap_info_locked->bmiHeader.biWidth = bitmap_info_header.biWidth;
-	bitmap_info_locked->bmiHeader.biHeight = bitmap_info_header.biHeight;
-	bitmap_info_locked->bmiHeader.biPlanes = 1;
-	bitmap_info_locked->bmiHeader.biBitCount = 32;
-	bitmap_info_locked->bmiHeader.biCompression = BI_RGB;
-	bitmap_info_locked->bmiHeader.biSizeImage = 0;
-	bitmap_info_locked->bmiHeader.biXPelsPerMeter = 0;
-	bitmap_info_locked->bmiHeader.biYPelsPerMeter = 0;
-	bitmap_info_locked->bmiHeader.biClrUsed = 0;
-	bitmap_info_locked->bmiHeader.biClrImportant = 0;
-	memcpy(bitmap_data_locked, data_u8,
-	       bitmap_file_header.bfSize - bitmap_file_header.bfOffBits);
-
-	LocalUnlock(*bitmap_info);
-	LocalUnlock(*bitmap_data);
-	free(data_u8);
 
 	if (progress_callback != NULL)
 		if (progress_callback(1, 1, user_data))
