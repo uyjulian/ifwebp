@@ -112,7 +112,6 @@ cleanup:
 		LocalFree(*h_bitmap_info);
 		*h_bitmap_info = NULL;
 	}
-	WebPFreeDecBuffer(&config.output);
 
 	return ret_result;
 }
