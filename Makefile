@@ -161,7 +161,7 @@ DEPENDENCY_SOURCE_DIRECTORY_LIBWEBP := $(DEPENDENCY_SOURCE_DIRECTORY)/libwebp
 
 DEPENDENCY_SOURCE_FILE_LIBWEBP := $(DEPENDENCY_SOURCE_DIRECTORY)/libwebp.tar.xz
 
-DEPENDENCY_SOURCE_URL_LIBWEBP := https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.3.1.tar.gz
+DEPENDENCY_SOURCE_URL_LIBWEBP := https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.3.2.tar.gz
 
 $(DEPENDENCY_SOURCE_FILE_LIBWEBP): | $(DEPENDENCY_SOURCE_DIRECTORY)
 	curl --location --output $@ $(DEPENDENCY_SOURCE_URL_LIBWEBP)
