@@ -57,8 +57,8 @@ endif()
 
 include(ExternalProject)
 ExternalProject_Add(libwebp-build
-	URL https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.5.0.tar.gz
-	URL_HASH SHA256=7d6fab70cf844bf6769077bd5d7a74893f8ffd4dfb42861745750c63c2a5c92c
+	URL https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.6.0.tar.gz
+	URL_HASH SHA256=e4ab7009bf0629fd11982d4c2aa83964cf244cffba7347ecd39019a9e38c4564
 	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 	CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env
 		"CC=${CMAKE_C_COMPILER}"
